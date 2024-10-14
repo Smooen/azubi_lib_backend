@@ -4,6 +4,8 @@ import (
 	"encoding/json"
 	"fmt"
 	"net/http"
+	"strings"
+
 	"github.com/labstack/echo/v4"
 )
 
@@ -36,60 +38,74 @@ type IndustryIdentifier struct {
 	Identifier string `json:"identifier"`
 }
 
-func getBookByID(c echo.Context) error {
-	bookID := c.QueryParam("id") 
+//Batch example GET http://localhost:1323/Books?id=GWorEAAAQBAJ,Xf4JEQAAQBAJ (IDs are comma separated)
 
-	
-	if bookID == "" {
+func getBooksByID(c echo.Context) error {
+	bookIDs := c.QueryParam("id")
+
+	if bookIDs == "" {
 		return c.JSON(http.StatusBadRequest, echo.Map{
-			"error": "No book ID provided",
+			"error": "No book IDs provided",
 		})
 	}
 
-	url := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes/%s", bookID)
+	ids := strings.Split(bookIDs, ",")
+	var books []Book
 
-	resp, err := http.Get(url)
-	if err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"error": "Failed to fetch book from Google Books API",
-		})
-	}
-	defer resp.Body.Close()
-
-	if resp.StatusCode != http.StatusOK {
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"error": "Google Books API returned non-200 status code",
-		})
-	}
-
-	var bookItem GoogleBookItem
-	if err := json.NewDecoder(resp.Body).Decode(&bookItem); err != nil {
-		return c.JSON(http.StatusInternalServerError, echo.Map{
-			"error": "Failed to parse response from Google Books API",
-		})
-	}
-	authors := "Unknown Author"
-	if len(bookItem.VolumeInfo.Authors) > 0 {
-		authors = bookItem.VolumeInfo.Authors[0]
-	}
-
-	isbn := "Unknown ISBN"
-	for _, identifier := range bookItem.VolumeInfo.IndustryIdentifiers {
-		if identifier.Type == "ISBN_13" {
-			isbn = identifier.Identifier
-			break
+	for _, bookID := range ids {
+		bookID = strings.TrimSpace(bookID)
+		if bookID == "" {
+			continue 
 		}
+
+		url := fmt.Sprintf("https://www.googleapis.com/books/v1/volumes/%s", bookID)
+
+		resp, err := http.Get(url)
+		if err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{
+				"error": "Failed to fetch book from Google Books API",
+			})
+		}
+		defer resp.Body.Close()
+
+		if resp.StatusCode != http.StatusOK {
+			return c.JSON(http.StatusInternalServerError, echo.Map{
+				"error": fmt.Sprintf("Google Books API returned non-200 status code for ID %s", bookID),
+			})
+		}
+
+		var bookItem GoogleBookItem
+		if err := json.NewDecoder(resp.Body).Decode(&bookItem); err != nil {
+			return c.JSON(http.StatusInternalServerError, echo.Map{
+				"error": "Failed to parse response from Google Books API",
+			})
+		}
+
+		authors := "Unknown Author"
+		if len(bookItem.VolumeInfo.Authors) > 0 {
+			authors = bookItem.VolumeInfo.Authors[0]
+		}
+
+		isbn := "Unknown ISBN"
+		for _, identifier := range bookItem.VolumeInfo.IndustryIdentifiers {
+			if identifier.Type == "ISBN_13" {
+				isbn = identifier.Identifier
+				break
+			}
+		}
+
+		book := Book{
+			Title:       bookItem.VolumeInfo.Title,
+			Isbn:        isbn,
+			Author:      authors,
+			ReleaseDate: bookItem.VolumeInfo.PublishedDate,
+			Availability: true,
+		}
+
+		books = append(books, book)
 	}
 
-	book := Book{
-		Title:       bookItem.VolumeInfo.Title,
-		Isbn:        isbn,
-		Author:      authors,
-		ReleaseDate: bookItem.VolumeInfo.PublishedDate,
-		Availability: true,
-	}
-
-	return c.JSON(http.StatusOK, book)
+	return c.JSON(http.StatusOK, books) 
 }
 
 func main() {
@@ -99,7 +115,7 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 
-	e.GET("/Books", getBookByID) 
+	e.GET("/Books", getBooksByID)
 
 	e.Logger.Fatal(e.Start(":1323"))
 }
