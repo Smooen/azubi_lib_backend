@@ -52,6 +52,7 @@ func getBooksByID(c echo.Context) error {
 
 	ids := strings.Split(bookIDs, ",")
 	var books []Book
+	var errors []string
 
 	for _, bookID := range ids {
 		bookID = strings.TrimSpace(bookID)
@@ -63,23 +64,20 @@ func getBooksByID(c echo.Context) error {
 
 		resp, err := http.Get(url)
 		if err != nil {
-			return c.JSON(http.StatusInternalServerError, echo.Map{
-				"error": "Failed to fetch book from Google Books API",
-			})
+			errors = append(errors, fmt.Sprintf("Failed to fetch book ID %s: %v", bookID, err))
+			continue
 		}
 		defer resp.Body.Close()
 
 		if resp.StatusCode != http.StatusOK {
-			return c.JSON(http.StatusInternalServerError, echo.Map{
-				"error": fmt.Sprintf("Google Books API returned non-200 status code for ID %s", bookID),
-			})
+			errors = append(errors, fmt.Sprintf("Google Books API returned non-200 status code for ID %s", bookID))
+			continue
 		}
 
 		var bookItem GoogleBookItem
 		if err := json.NewDecoder(resp.Body).Decode(&bookItem); err != nil {
-			return c.JSON(http.StatusInternalServerError, echo.Map{
-				"error": "Failed to parse response from Google Books API",
-			})
+			errors = append(errors, fmt.Sprintf("Failed to parse response for book ID %s", bookID))
+			continue
 		}
 
 		authors := "Unknown Author"
@@ -106,17 +104,20 @@ func getBooksByID(c echo.Context) error {
 		books = append(books, book)
 	}
 
-	return c.JSON(http.StatusOK, books) 
+	return c.JSON(http.StatusOK, echo.Map{
+		"books":  books,
+		"errors": errors,
+	})
 }
 
 func main() {
 	e := echo.New()
-	
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
 	e.Use(middleware.CORS())
-	
+
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
