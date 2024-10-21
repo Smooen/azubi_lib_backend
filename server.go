@@ -34,7 +34,7 @@ func main() {
 
 	e.Use(middleware.CORS())
 
-	db, err := sql.Open("sqlite3", "./test.db")
+	db, err := sql.Open("sqlite3", "./test.sqlite")
 
 	if err != nil {
 		log.Fatal(err)
@@ -46,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	log.Println("Ping successful?")
+	createBooksTable(db)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
