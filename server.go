@@ -44,7 +44,7 @@ func main() {
 	log.Printf("Server:%s - database:%s", server, database)
 
 
-	connStr := fmt.Sprintf("server=%s;database=%s;user id=%s;", server, database, user)
+	connStr := fmt.Sprintf("server=%s;database=%s;user id=%s;port=1434;", server, database, user)
 
 	db, err := sql.Open("mssql", connStr)
 	if err != nil {
@@ -55,7 +55,7 @@ func main() {
 	if pingErr != nil {
 		log.Fatal(pingErr)
 	}
-    fmt.Println("Connected!")
+	fmt.Println("Connected!")
 
 	defer db.Close()
 
