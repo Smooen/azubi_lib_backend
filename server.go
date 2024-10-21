@@ -1,16 +1,16 @@
 package main
 
 import (
-	"fmt"
 	"database/sql"
 	"log"
-	"os"
 	"net/http"
 
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 	
 	"github.com/joho/godotenv"
+
+	_ "github.com/mattn/go-sqlite3"
 )
 
 var books =[]Book { 
@@ -33,6 +33,20 @@ func main() {
 	e.Use(middleware.Recover())
 
 	e.Use(middleware.CORS())
+
+	db, err := sql.Open("sqlite3", "./test.db")
+
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer db.Close()
+
+	db.Ping()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	log.Println("Ping successful?")
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
