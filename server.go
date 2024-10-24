@@ -1,7 +1,6 @@
 package main
 
 import (
-	"database/sql"
 	"log"
 	"net/http"
 
@@ -11,7 +10,18 @@ import (
 	"github.com/joho/godotenv"
 
 	_ "github.com/mattn/go-sqlite3"
+	"gorm.io/gorm"
+	"gorm.io/driver/sqlite"
 )
+
+type Books struct {
+	gorm.Model
+	Title  string
+	Isbn string
+	Author string
+	ReleaseDate string
+	Availability bool
+}
 
 var books =[]Book { 
 	{Isbn: "9780441172719", Title: "Dune", Author: "Frank Herbert", ReleaseDate: "1987", Availability: false}, 
@@ -34,19 +44,22 @@ func main() {
 
 	e.Use(middleware.CORS())
 
-	db, err := sql.Open("sqlite3", "./test.sqlite")
+	//db, err := sql.Open("sqlite3", "./test.sqlite")
+	db, err := gorm.Open(sqlite.Open("./test.sqlite"), &gorm.Config{})
 
 	if err != nil {
 		log.Fatal(err)
 	}
-	defer db.Close()
 
-	db.Ping()
-	if err != nil {
-		log.Fatal(err)
-	}
+	db.Create(&Books{
+		Title:  "Test",
+		Isbn: "91203001",
+		Author: "Ich habs geschrieben",
+		//ReleaseDate: "2024",
+		Availability: true,
+	})
 
-	createBooksTable(db)
+	//createBooksTable(db)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
