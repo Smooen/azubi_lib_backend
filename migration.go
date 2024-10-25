@@ -1,24 +1,20 @@
 package main
 
 import (
-	//"database/sql"
-
-	//"github.com/labstack/gommon/log"
-
-	//"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
 
 func migrate(db *gorm.DB) {
+	tx := db.Session(&gorm.Session{})
 
-	db.AutoMigrate(&Book{})
+	tx.AutoMigrate(&Book{})
 
-	createTestData(db)
+	createTestData(tx)
 }
 
-func createTestData(db *gorm.DB) {
+func createTestData(tx *gorm.DB) {
 
-	db.Create(&Book{
+	tx.Create(&Book{
 		Title:  "The Catcher in the Rye",
 		Isbn: "9781438119250",
 		Author: "J. D. Salinger",
@@ -26,7 +22,7 @@ func createTestData(db *gorm.DB) {
 		Availability: true,
 	})
 
-	db.Create(&Book{
+	tx.Create(&Book{
 		Title:  "The Lord of the Rings",
 		Isbn: "9780007322596",
 		Author: "J. R. R. Tolkien",
@@ -34,14 +30,14 @@ func createTestData(db *gorm.DB) {
 		Availability: false,
 	})
 	
-	db.Create(&Book{
+	tx.Create(&Book{
 		Title:  "Pride and Prejudice",
 		Isbn: "9780198826736",
 		Author: "Jane Austen",
 		ReleaseDate: "January 28, 1813",
 		Availability: false,
 	})
-	db.Create(&Book{
+	tx.Create(&Book{
 		Title:  "1984",
 		Isbn: "9783641279110",
 		Author: "George Orwell",

@@ -15,26 +15,11 @@ import (
 	"gorm.io/gorm"
 )
 
-type (
-	Handler struct {
-		DB *gorm.DB
-	}
-)
-
-type Book struct {
-	gorm.Model
-	Title  string		`json:"title" query:"title"`
-	Isbn string			`json:"isbn" query:"isbn"`
-	Author string		`json:"author" query:"author"`
-	ReleaseDate string	`json:"releaseDate" query:"releaseDate"`
-	Availability bool	`json:"availability" query:"availability"`
-}
-
 func (h *Handler) getBooks(c echo.Context) error {
 	var books []Book
 
-	db := h.DB
-	result := db.Find(&books)
+	tx := h.DB.Session(&gorm.Session{})
+	result := tx.Find(&books)
 	if result.Error != nil {
 		return c.JSON(http.StatusInternalServerError, "Query failed")
 	}
@@ -61,13 +46,9 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h := Handler{DB: db} //why even bother with handler if no session?
+	h := Handler{DB: db}
 
-	migrate(db) // should migrate return err since it might fail?
-
-	var book Book
-	db.First(&book)
-	log.Printf("Found book: %s\n", book.Title)
+	migrate(db)
 
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
