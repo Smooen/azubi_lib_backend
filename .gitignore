@@ -26,3 +26,9 @@ go.work.sum
 
 # everything from /tmp directory
 /tmp
+
+# All Database types
+*.db
+*.sqlite
+*.sqlite3
+
