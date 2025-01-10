@@ -27,3 +27,16 @@ Web framework for building web apps in Go.
 [Echo](https://echo.labstack.com/docs/)
 
 All of these technologies are very popular, modern and have excellent documentation.
+
+## TODO:
+
+- Models feddich (Nurnoch User, Favorites)
+- Wie geht der Datenbank zugriff (mehr oder weniger geschafft)
+- Basic Queries 
+    -> GET Books, Get Book mit ID/Name etc.
+- CRUD Operations mit ECHO
+    - GET
+    - Save
+    - Update? (weil availability)
+    - (Delete)
+- Authentication ??

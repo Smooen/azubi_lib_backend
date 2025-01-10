@@ -7,7 +7,9 @@ import (
 func migrate(db *gorm.DB) {
 	tx := db.Session(&gorm.Session{})
 
+	tx.AutoMigrate(&User{})
 	tx.AutoMigrate(&Book{})
+	tx.AutoMigrate(&Favorites{})
 
 	createTestData(tx)
 }
@@ -43,5 +45,11 @@ func createTestData(tx *gorm.DB) {
 		Author: "George Orwell",
 		ReleaseDate: "1949",
 		Availability: true,
+	})
+
+	tx.Create(&User{
+		Username: "Susanne",
+		Password: "1234",
+		Email: "test@mail.com",
 	})
 }
