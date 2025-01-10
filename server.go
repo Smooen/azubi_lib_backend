@@ -30,16 +30,16 @@ func (h *Handler) getBooks(c echo.Context) error {
 func (h *Handler) getBook(c echo.Context) error {
 	var book Book
 
-	//id := c.QueryParam("id") //might have to declare query param on gorm model?
-	isbn := c.QueryParam("isbn")
+	id := c.QueryParam("id")
+	log.Print(id)
 
 	tx := h.DB
 
-	if isbn == "" {
+	if id == "" {
 		return c.JSON(http.StatusNotFound, "Book not found")
 	}
 
-	res := tx.Where("isbn = ?", isbn).First(&book)
+	res := tx.First(&book, id)
 
 	if res.Error != nil {
 		return c.JSON(http.StatusInternalServerError, "Query failed loser")
