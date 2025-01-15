@@ -15,8 +15,36 @@ import (
 func (h *Handler) getBooks(c echo.Context) error {
 	var books []Book
 
+	id := c.QueryParam("id")
+	title := c.QueryParam("title")
+	isbn := c.QueryParam("isbn")
+	author := c.QueryParam("author")
+	releaseDate := c.QueryParam("releaseDate")
+	availability := c.QueryParam("availability")
+
 	tx := h.DB.Session(&gorm.Session{})
+
+	if id != "" {
+		tx = tx.Where("id = ?", id)
+	}
+	if title != "" {
+		tx = tx.Where("title = ?", title)
+	}
+	if isbn != "" {
+		tx = tx.Where("isbn = ?", isbn)
+	}
+	if author != "" {
+		tx = tx.Where("author = ?", author)
+	}
+	if releaseDate != "" {
+		tx = tx.Where("release_date = ?", releaseDate)
+	}
+	if availability != "" {
+		tx = tx.Where("availability = ?", availability)
+	}
+
 	result := tx.Find(&books)
+
 	if result.Error != nil {
 		return c.JSON(http.StatusInternalServerError, "Query failed")
 	}
@@ -28,20 +56,37 @@ func (h *Handler) getBook(c echo.Context) error {
 	var book Book
 
 	id := c.QueryParam("id")
-	log.Print(id)
+	title := c.QueryParam("title")
+	isbn := c.QueryParam("isbn")
+	author := c.QueryParam("author")
+	releaseDate := c.QueryParam("releaseDate")
+	availability := c.QueryParam("availability")
 
-	tx := h.DB
+	tx := h.DB.Session(&gorm.Session{})
+	query := tx
 
-	if id == "" {
-		return c.JSON(http.StatusNotFound, "Book not found")
+	if id != "" {
+		query = query.Where("id = ?", id)
 	}
-
-	res := tx.First(&book, id)
-
-	if res.Error != nil {
-		return c.JSON(http.StatusInternalServerError, "Query failed loser")
+	if title != "" {
+		query = query.Where("title = ?", title)
 	}
-
+	if isbn != "" {
+		query = query.Where("isbn = ?", isbn)
+	}
+	if author != "" {
+		query = query.Where("author = ?", author)
+	}
+	if releaseDate != "" {
+		query = query.Where("release_date = ?", releaseDate)
+	}
+	if availability != "" {
+		query = query.Where("availability = ?", availability)
+	}
+	result := query.Find(&book)
+	if result.Error != nil {
+		return c.JSON(http.StatusInternalServerError, "Query failed")
+	}
 	return c.JSON(http.StatusOK, book)
 }
 
@@ -105,5 +150,4 @@ func main() {
 	e.GET("/User", h.getUser)
 
 	e.Logger.Fatal(e.Start(":1323"))
-
 }
