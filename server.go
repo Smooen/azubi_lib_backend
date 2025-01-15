@@ -8,9 +8,6 @@ import (
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
-	"github.com/joho/godotenv"
-
-	_ "github.com/mattn/go-sqlite3"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
@@ -24,7 +21,7 @@ func (h *Handler) getBooks(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, "Query failed")
 	}
 
-	return c.JSON(http.StatusOK, books);
+	return c.JSON(http.StatusOK, books)
 }
 
 func (h *Handler) getBook(c echo.Context) error {
@@ -48,14 +45,40 @@ func (h *Handler) getBook(c echo.Context) error {
 	return c.JSON(http.StatusOK, book)
 }
 
-func main() {
-	err := godotenv.Load("db.env")
-	if err != nil {
-		log.Fatal("Error loading .env files")
+func (h *Handler) getUsers(c echo.Context) error {
+	var users []User
+
+	tx := h.DB.Session(&gorm.Session{})
+	result := tx.Find(&users)
+	if result.Error != nil {
+		return c.JSON(http.StatusInternalServerError, "Query failed")
+	}
+	return c.JSON(http.StatusOK, users)
+}
+
+func (h *Handler) getUser(c echo.Context) error {
+	var user User
+
+	id := c.QueryParam("id")
+	log.Print(id)
+
+	tx := h.DB
+
+	if id == "" {
+		return c.JSON(http.StatusNotFound, "User not found")
 	}
 
+	res := tx.First(&user, id)
+
+	if res.Error != nil {
+		return c.JSON(http.StatusInternalServerError, "Query failed loser")
+	}
+	return c.JSON(http.StatusOK, user)
+}
+
+func main() {
 	e := echo.New()
-	
+
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
@@ -74,10 +97,13 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	
+
 	e.GET("/Books", h.getBooks)
 	e.GET("/Book", h.getBook)
 
+	e.GET("/Users", h.getUsers)
+	e.GET("/User", h.getUser)
+
 	e.Logger.Fatal(e.Start(":1323"))
-	
+
 }
