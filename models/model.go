@@ -1,14 +1,9 @@
-package main
+package models
 
 import (
 	"gorm.io/gorm"
 )
 
-type (
-	Handler struct {
-		DB *gorm.DB
-	}
-)
 
 type User struct {
 	gorm.Model

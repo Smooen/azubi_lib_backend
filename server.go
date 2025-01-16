@@ -5,6 +5,8 @@ import (
 	"net/http"
 	"os"
 
+	"azubi_library/controllers"
+
 	"github.com/labstack/echo/v4"
 	"github.com/labstack/echo/v4/middleware"
 
@@ -14,39 +16,6 @@ import (
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 )
-
-func (h *Handler) getBooks(c echo.Context) error {
-	var books []Book
-
-	tx := h.DB.Session(&gorm.Session{})
-	result := tx.Find(&books)
-	if result.Error != nil {
-		return c.JSON(http.StatusInternalServerError, "Query failed")
-	}
-
-	return c.JSON(http.StatusOK, books);
-}
-
-func (h *Handler) getBook(c echo.Context) error {
-	var book Book
-
-	id := c.QueryParam("id")
-	log.Print(id)
-
-	tx := h.DB
-
-	if id == "" {
-		return c.JSON(http.StatusNotFound, "Book not found")
-	}
-
-	res := tx.First(&book, id)
-
-	if res.Error != nil {
-		return c.JSON(http.StatusInternalServerError, "Query failed loser")
-	}
-
-	return c.JSON(http.StatusOK, book)
-}
 
 func main() {
 	err := godotenv.Load("db.env")
@@ -67,7 +36,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h := Handler{DB: db}
+	handler := controllers.Handler{DB: db}
 
 	migrate(db)
 
@@ -75,8 +44,7 @@ func main() {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
 	
-	e.GET("/Books", h.getBooks)
-	e.GET("/Book", h.getBook)
+	SetupRoutes(e, handler)
 
 	e.Logger.Fatal(e.Start(":1323"))
 	
