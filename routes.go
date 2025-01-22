@@ -12,6 +12,6 @@ func SetupRoutes(e *echo.Echo, h *controllers.Handler) {
 	e.GET("/book", h.GetBook)
 	e.GET("/users", h.GetUsers)
 	e.GET("/user", h.GetUser) // should be "/user/:id" or something
-	//e.POST("/login", h.Login)
+	e.POST("/login", h.Login)
 	// e.GET("/register", h.Register)
 }

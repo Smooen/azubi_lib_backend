@@ -2,6 +2,8 @@ package main
 
 import (
 	"azubi_library/models"
+
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -52,5 +54,11 @@ func createTestData(tx *gorm.DB) {
 		Username: "Susanne",
 		Password: "1234",
 		Email: "test@mail.com",
+	})
+	pwHash, _ := bcrypt.GenerateFromPassword([]byte("default"), 8)
+	tx.Create(&models.User{
+		Username: "default",
+		Password: string(pwHash),
+		Email: "default@example.com",
 	})
 }
