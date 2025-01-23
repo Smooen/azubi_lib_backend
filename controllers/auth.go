@@ -23,30 +23,34 @@ type jwtCustomClaims struct {
 	jwt.RegisteredClaims
 }
 
-func generateToken(user *models.User, secret []byte, c echo.Context) (string, error) {
+func generateToken(user *models.User, c echo.Context) (string, time.Time, error) {
+	expirationTime := time.Now().Add(time.Hour * 72)
 	claims := &jwtCustomClaims{
 		Username: user.Username,
 		RegisteredClaims: jwt.RegisteredClaims{
-			ExpiresAt: jwt.NewNumericDate(time.Now().Add(time.Hour * 72)),
+			ExpiresAt: jwt.NewNumericDate(expirationTime),
 		},
 	}
 
 	token := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 
-	t, err := token.SignedString([]byte("secret")) // secret should be key from env?
+	tokenString, err := token.SignedString([]byte("giga-secret")) // secret should be key from env
 	if err != nil {
 		c.JSON(500, "Could not generate token")
-		return "", err
+		return "", expirationTime, err
 	}
 
-	return t, err
+	return tokenString, expirationTime, nil
 }
 
-// func generateAccessToken(user *models.User) (string, time.Time, error) {
-// 	expirationTime := time.Now().Add(72 * time.Hour)
-//
-//
-// }
+func setTokenCookie(c echo.Context, token string, expirationTime time.Time) {
+	cookie := new(http.Cookie)
+	cookie.Name = "token"
+	cookie.Value = token
+	cookie.Expires = expirationTime
+	cookie.Path = "/"
+	c.SetCookie(cookie)
+}
 
 func (h *Handler) Login(c echo.Context) error {
 	var user models.User
@@ -68,7 +72,11 @@ func (h *Handler) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, "Password incorrect")
 	}
 
-	// generate token and put into cookie jar
+	token, expirationTime, err := generateToken(&user, c)
+	if err != nil {
+		return c.JSON(500, "Something went wrong creating the token")
+	}
+	setTokenCookie(c, token, expirationTime)
 
 	return c.Redirect(http.StatusMovedPermanently, "/books")
 }
