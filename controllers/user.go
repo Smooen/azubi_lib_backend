@@ -37,3 +37,15 @@ func (h *Handler) GetUser(c echo.Context) error {
 	}
 	return c.JSON(http.StatusOK, user)
 }
+
+func (h *Handler) CreateUser(c echo.Context) error {
+	user := new(models.User)
+	tx := h.DB.Session(&gorm.Session{})
+
+	if err := c.Bind(user); err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+
+	tx.Create(&user)
+	return c.JSON(http.StatusCreated, user)
+}
