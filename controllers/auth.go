@@ -81,12 +81,36 @@ func (h *Handler) Login(c echo.Context) error {
 	return c.Redirect(http.StatusMovedPermanently, "/books")
 }
 
-//
-// func (h *Handler) Register() error {
-// 	// gets email and hashed token from request body
-// 	// if email is doesnt already exist
-// 	// create new user
-// }
+func (h *Handler) Register(c echo.Context) error {
+	var user models.User
+
+	if err := c.Bind(&user); err != nil {
+		return c.JSON(http.StatusInternalServerError, "Couldnt bind user to echo context")
+	}
+
+	var existingUser models.User
+	if err := h.DB.Where("email = ? OR username = ?", user.Email, user.Username).First(&existingUser).Error; err == nil {
+		return c.JSON(http.StatusBadRequest, "User already exists")
+	}
+
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user.Password = string(pwHash)
+
+	if err := h.DB.Create(&user).Error; err != nil {
+		return c.JSON(http.StatusInternalServerError, "Couldn't create user")
+	}
+
+	token, expirationTime, err := generateToken(&user, c)
+	if err != nil {
+		return c.JSON(500, "Something went wrong creating the token")
+	}
+	setTokenCookie(c, token, expirationTime)
+
+	return c.Redirect(http.StatusCreated, "/books")
+}
 
 // func Logout() error {
 //
