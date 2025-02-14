@@ -5,6 +5,7 @@ import (
 	"net/http"
 
 	"github.com/labstack/echo/v4"
+	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
 
@@ -46,6 +47,16 @@ func (h *Handler) CreateUser(c echo.Context) error {
 		return c.JSON(http.StatusInternalServerError, err)
 	}
 
-	tx.Create(&user)
+	pwHash, err := bcrypt.GenerateFromPassword([]byte(user.Password), bcrypt.DefaultCost)
+	if err != nil {
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	user.Password = string(pwHash)
+
+	if err := tx.Create(&user).Error; err != nil {
+		tx.Rollback()
+		return c.JSON(http.StatusInternalServerError, err)
+	}
+	tx.Commit()
 	return c.JSON(http.StatusCreated, user)
 }
