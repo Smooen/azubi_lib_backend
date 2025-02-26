@@ -16,5 +16,5 @@ func SetupRoutes(e *echo.Echo, h *controllers.Handler) {
 	e.POST("/user", h.CreateUser)
 
 	e.POST("/login", h.Login)
-	// e.GET("/register", h.Register)
+	e.POST("/register", h.Register)
 }
