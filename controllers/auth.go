@@ -7,7 +7,6 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
-	"github.com/labstack/gommon/log"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -77,7 +76,6 @@ func (h *Handler) Login(c echo.Context) error {
 		return c.JSON(http.StatusUnauthorized, err)
 	}
 
-	log.Info("Generating token for user: ", loginReq.Email)
 	token, expirationTime, err := generateToken(&existingUser, c)
 	if err != nil {
 		return c.JSON(500, "Something went wrong creating the token")
