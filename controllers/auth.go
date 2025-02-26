@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -18,9 +19,14 @@ type (
 )
 
 type jwtCustomClaims struct {
-	Username  string `json:"username"`
+	Username string `json:"username"`
 	//Admin bool   `json:"admin"`
 	jwt.RegisteredClaims
+}
+
+type LoginRequest struct {
+	Email    string `json:"email"`
+	Password string `json:"password"`
 }
 
 func generateToken(user *models.User, c echo.Context) (string, time.Time, error) {
@@ -53,26 +59,26 @@ func setTokenCookie(c echo.Context, token string, expirationTime time.Time) {
 }
 
 func (h *Handler) Login(c echo.Context) error {
-	var user models.User
+	var loginReq LoginRequest
 
-	if err := c.Bind(&user); err != nil {
+	if err := c.Bind(&loginReq); err != nil {
 		return c.JSON(http.StatusInternalServerError, "Couldnt bind user to echo context")
 	}
 
 	var existingUser models.User
 
-	res := h.DB.Find(&existingUser, "username = ?", user.Username)
+	res := h.DB.Find(&existingUser, "email = ?", loginReq.Email)
 
 	if res.Error != nil {
 		c.JSON(http.StatusUnauthorized, "User not found")
 	}
 
-	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(user.Password));
-	err != nil {
-		return c.JSON(http.StatusUnauthorized, "Password incorrect")
+	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(loginReq.Password)); err != nil {
+		return c.JSON(http.StatusUnauthorized, err)
 	}
 
-	token, expirationTime, err := generateToken(&user, c)
+	log.Info("Generating token for user: ", loginReq.Email)
+	token, expirationTime, err := generateToken(&existingUser, c)
 	if err != nil {
 		return c.JSON(500, "Something went wrong creating the token")
 	}
