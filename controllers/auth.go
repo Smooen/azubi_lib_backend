@@ -7,6 +7,7 @@ import (
 
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
+	"github.com/labstack/gommon/log"
 	"golang.org/x/crypto/bcrypt"
 	"gorm.io/gorm"
 )
@@ -54,6 +55,10 @@ func setTokenCookie(c echo.Context, token string, expirationTime time.Time) {
 	cookie.Value = token
 	cookie.Expires = expirationTime
 	cookie.Path = "/"
+	cookie.HttpOnly = true
+	cookie.Secure = false
+	cookie.SameSite = http.SameSiteLaxMode
+
 	c.SetCookie(cookie)
 }
 
@@ -73,7 +78,7 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 
 	if err := bcrypt.CompareHashAndPassword([]byte(existingUser.Password), []byte(loginReq.Password)); err != nil {
-		return c.JSON(http.StatusUnauthorized, err)
+		return c.JSON(http.StatusUnauthorized, "Incorrect password!")
 	}
 
 	token, expirationTime, err := generateToken(&existingUser, c)
@@ -82,7 +87,7 @@ func (h *Handler) Login(c echo.Context) error {
 	}
 	setTokenCookie(c, token, expirationTime)
 
-	return c.Redirect(http.StatusMovedPermanently, "/books")
+	return c.JSON(http.StatusOK, "Login successful")
 }
 
 func (h *Handler) Register(c echo.Context) error {
@@ -114,6 +119,17 @@ func (h *Handler) Register(c echo.Context) error {
 	setTokenCookie(c, token, expirationTime)
 
 	return c.Redirect(http.StatusCreated, "/books")
+}
+
+func (h *Handler) CheckCookie(c echo.Context) error {
+	cookie, err := c.Cookie("token")
+	if err != nil {
+		log.Error(err)
+		return err
+	}
+	log.Info(cookie.Name)
+	log.Info(cookie.Value)
+	return c.JSON(http.StatusOK, "read cookie")
 }
 
 // func Logout() error {

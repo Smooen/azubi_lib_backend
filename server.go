@@ -20,7 +20,11 @@ func main() {
 	e.Use(middleware.Logger())
 	e.Use(middleware.Recover())
 
-	e.Use(middleware.CORS())
+	e.Use(middleware.CORSWithConfig(middleware.CORSConfig{
+		AllowOrigins:     []string{"http://localhost:5173"},
+		AllowMethods:     []string{http.MethodGet, http.MethodPost, http.MethodPut, http.MethodDelete},
+		AllowCredentials: true,
+	}))
 
 	os.Remove("./test.sqlite")
 	db, err := gorm.Open(sqlite.Open("./test.sqlite"), &gorm.Config{})
@@ -35,7 +39,7 @@ func main() {
 	e.GET("/", func(c echo.Context) error {
 		return c.String(http.StatusOK, "Hello, World!")
 	})
-	
+
 	SetupRoutes(e, &handler)
 
 	e.Logger.Fatal(e.Start(":1323"))
